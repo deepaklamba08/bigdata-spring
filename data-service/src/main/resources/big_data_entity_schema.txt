@@ -1,0 +1,14 @@
+schema{
+ query:Query
+}
+
+type Query{
+  lookupEntity(id: String): Entity
+  lookupEntityByType(type: String): Entity
+}
+
+type Entity{
+  id:String
+  type:String
+  data:String
+}

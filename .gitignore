@@ -1,0 +1,4 @@
+# Project exclude paths
+/data-core/target/
+/data-dao/target/
+/data-service/target/

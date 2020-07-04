@@ -1,0 +1,18 @@
+{
+  "joinExpressions": null,
+  "queryAliases": {
+    "lookupEntity": "entity",
+    "lookupEntityByType": "entity"
+  },
+  "tables": [
+    {
+      "tableName": "ENTITY",
+      "alias": "entity",
+      "columns": {
+        "id": "ID",
+        "type": "TYPE",
+        "data": "DATA"
+      }
+    }
+  ]
+}
