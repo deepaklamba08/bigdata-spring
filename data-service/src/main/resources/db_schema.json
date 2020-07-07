@@ -1,8 +1,10 @@
 {
+  "dialect": "other",
   "joinExpressions": null,
   "queryAliases": {
     "lookupEntity": "entity",
-    "lookupEntityByType": "entity"
+    "lookupEntityByType": "entity",
+    "lookupEntityIdType": "entity"
   },
   "tables": [
     {

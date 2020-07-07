@@ -1,13 +1,17 @@
 package com.bigdata.core.query.impl;
 
+
 import com.bigdata.core.query.DataQuery;
 import com.bigdata.core.query.QueryBuilder;
 import com.bigdata.core.query.SchemaProvider;
 import graphql.language.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.util.Pair;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SqlQueryBuilder implements QueryBuilder {
 
@@ -19,39 +23,39 @@ public class SqlQueryBuilder implements QueryBuilder {
 
     @Override
     public DataQuery buildQuery(Map<String, List<String>> selectionSet, Map<String, List<Pair<String, Value>>> expressions) {
-
-        Map<String, String> inverseMapping = new HashMap<>();
-
-        List<String> projections = selectionSet.entrySet().stream().map(pair -> {
+        Optional<String> projections = selectionSet.entrySet().stream().map(pair -> {
             String tableAlias = this.schemaProvider.getQueryAliases(pair.getKey());
-            List<String> columnAliases = pair.getValue();
-
             SchemaProvider.TableSchema table = schemaProvider.getTableSchema(tableAlias);
-            columnAliases.forEach(alias -> {
-                inverseMapping.put(alias, table.getColumnName(alias));
-            });
-
-            String projection = columnAliases.stream().map(columnAlias -> table.getAlias() + "." + table.getColumnName(columnAlias) + " as \"" + columnAlias+"\"").reduce((v1, v2) -> v1 + ", " + v2).get();
-            return projection;
-        }).collect(Collectors.toList());
+            return this.getQuotedString(pair.getValue(), table, schemaProvider.getDialect());
+        }).reduce((v1, v2) -> v1 + ", " + v2);
 
         StringBuilder query = new StringBuilder("SELECT ");
-        query.append(projections.stream().reduce((v1, v2) -> v1 + ", " + v2).get());
-        query.append(" FROM ").append(this.buildSelectionSet(selectionSet.keySet()));
-        query.append(" WHERE 1=1 ");
-        List<Object> parameters = new ArrayList<>();
-        expressions.entrySet().forEach(pair -> {
+        query.append(projections.get()).append(" FROM ").append(this.buildSelectionSet(selectionSet.keySet()));
+        List<Pair<String, Object>> expressPairs = expressions.entrySet().stream().flatMap(pair -> {
             String tableAlias = this.schemaProvider.getQueryAliases(pair.getKey());
             SchemaProvider.TableSchema table = schemaProvider.getTableSchema(tableAlias);
-            List<Pair<String, Object>> expressionPairs = pair.getValue().stream().map(expression -> this.parseExpression(table.getColumnName(expression.getFirst()), tableAlias, expression.getSecond())).collect(Collectors.toList());
-            if (!expressionPairs.isEmpty()) {
-                String whereClause = expressionPairs.stream().map(ePair -> ePair.getFirst()).reduce((p1, p2) -> p1 + " AND " + p2).get();
-                query.append(" AND (").append(whereClause).append(")");
-                parameters.addAll(expressionPairs.stream().map(ePair -> ePair.getSecond()).collect(Collectors.toList()));
-            }
-        });
+            Stream<Pair<String, Object>> expressionPairs = pair.getValue().stream().map(expression -> this.parseExpression(table.getColumnName(expression.getFirst()), tableAlias, expression.getSecond()));
+            return expressionPairs;
+        }).collect(Collectors.toList());
 
-        return new DataQuery(query.toString(), parameters, inverseMapping);
+        List<Object> parameters = expressPairs.stream().map(p -> p.getSecond()).collect(Collectors.toList());
+        Optional<String> whereClause = expressPairs.stream().map(p -> p.getFirst()).reduce((e1, e2) -> e1 + " AND " + e2);
+        if (whereClause.isPresent()) {
+            query.append(" WHERE (").append(whereClause.get()).append(")");
+        }
+
+        return new DataQuery(query.toString(), parameters);
+    }
+
+    @NotNull
+    private String getQuotedString(List<String> columnAliases, SchemaProvider.TableSchema table, String dialect) {
+        Function<String, String> mapper = null;
+        if ("HIVE".equalsIgnoreCase(dialect)) {
+            mapper = columnAlias -> table.getAlias() + "." + table.getColumnName(columnAlias) + " as " + columnAlias;
+        } else {
+            mapper = columnAlias -> table.getAlias() + "." + table.getColumnName(columnAlias) + " as \"" + columnAlias + "\"";
+        }
+        return columnAliases.stream().map(mapper).reduce((v1, v2) -> v1 + ", " + v2).get();
     }
 
     private Pair<String, Object> parseExpression(String columnName, String tableAlias, Value value) {

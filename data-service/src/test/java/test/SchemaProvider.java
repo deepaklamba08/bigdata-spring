@@ -6,6 +6,7 @@ import java.util.Map;
 
 public class SchemaProvider implements Serializable {
 
+    private String dialect;
     private Map<String, TableSchema> schemaMap;
     private Map<String, String> joinExpressions;
     private Map<String, String> queryAliases;
@@ -41,6 +42,14 @@ public class SchemaProvider implements Serializable {
             this.joinExpressions = new HashMap<>();
         }
         this.joinExpressions.put(key, joinExpression);
+    }
+
+    public void setDialect(String dialect) {
+        this.dialect = dialect;
+    }
+
+    public String getDialect() {
+        return dialect;
     }
 
     public String getJoinExpression(String key) {

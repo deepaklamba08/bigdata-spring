@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class SchemaUtil {
 
+    private static final String DIALECT = "dialect";
     private static final String JOIN_EXPRESSIONS = "joinExpressions";
     private static final String QUERY_ALIASES = "queryAliases";
     private static final String TABLES = "tables";
@@ -36,6 +37,7 @@ public class SchemaUtil {
         for (JsonNode table : tables) {
             schemaProvider.addTableSchema(readTableSchema(table));
         }
+        schemaProvider.setDialect(schemaNode.get(DIALECT).asText());
 
         return schemaProvider;
     }

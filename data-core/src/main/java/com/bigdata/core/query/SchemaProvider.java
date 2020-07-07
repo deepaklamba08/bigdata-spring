@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SchemaProvider {
-
+    private String dialect;
     private Map<String, TableSchema> schemaMap;
     private Map<String, String> joinExpressions;
     private Map<String, String> queryAliases;
@@ -39,6 +39,14 @@ public class SchemaProvider {
             this.joinExpressions = new HashMap<>();
         }
         this.joinExpressions.put(key, joinExpression);
+    }
+
+    public void setDialect(String dialect) {
+        this.dialect = dialect;
+    }
+
+    public String getDialect() {
+        return dialect;
     }
 
     public void setSchemaMap(Map<String, TableSchema> schemaMap) {
