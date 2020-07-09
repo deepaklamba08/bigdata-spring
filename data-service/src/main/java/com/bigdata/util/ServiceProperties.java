@@ -16,6 +16,12 @@ public class ServiceProperties {
     @Value("${bigdata.svc.data.loader.file}")
     private String dataLoaderConfigFilePath;
 
+    @Value("${bigdata.svc.data.single.object}")
+    private String singleObjectProvider;
+
+    @Value("${bigdata.svc.data.multiple.object}")
+    private String multipleObjectProvider;
+
     private Map<String, String> dbCred;
 
     public String getDataLoaderConfigFilePath() {
@@ -36,5 +42,13 @@ public class ServiceProperties {
 
     public void setDbCred(Map<String, String> dbCred) {
         this.dbCred = dbCred;
+    }
+
+    public String getMultipleObjectProvider() {
+        return multipleObjectProvider;
+    }
+
+    public String getSingleObjectProvider() {
+        return singleObjectProvider;
     }
 }

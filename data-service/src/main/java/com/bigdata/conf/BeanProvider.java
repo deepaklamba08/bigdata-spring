@@ -20,6 +20,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumMap;
 import java.util.Map;
 
 @Configuration
@@ -57,7 +58,11 @@ public class BeanProvider {
         QueryBuilder queryBuilder = new SqlQueryBuilder(catalog);
 
         DataDAO dataDAO = new JdbcDAO(this.createJdbcTemplate());
-        DataFetcherFactory fetcherFactory = new DataFetcherFactory(queryBuilder, dataDAO, catalog);
+        EnumMap<DataFetcherFactory.FetcherType, String> fetcherTypes = new EnumMap<>(DataFetcherFactory.FetcherType.class);
+        fetcherTypes.put(DataFetcherFactory.FetcherType.SingleObject, this.serviceProperties.getSingleObjectProvider());
+        fetcherTypes.put(DataFetcherFactory.FetcherType.MultipleObject, this.serviceProperties.getMultipleObjectProvider());
+
+        DataFetcherFactory fetcherFactory = new DataFetcherFactory(queryBuilder, dataDAO, catalog, fetcherTypes);
 
         File configFile = new File(this.serviceProperties.getDataLoaderConfigFilePath());
         Map<String, String> config = SchemaUtil.readAsMap(configFile);
@@ -66,9 +71,9 @@ public class BeanProvider {
         TypeRuntimeWiring.Builder builder = new TypeRuntimeWiring.Builder();
         builder.typeName("Query");
 
-        config.forEach((key, value) -> {
-            builder.dataFetcher(key, fetcherFactory.createDataFetcher(value));
-        });
+        config.forEach((key, value) ->
+                builder.dataFetcher(key, fetcherFactory.createDataFetcher(DataFetcherFactory.FetcherType.valueOf(value)))
+        );
         return wiring.type(builder.build()).build();
     }
 }

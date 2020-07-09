@@ -3,10 +3,10 @@ package com.bigdata.core.df.intf;
 import com.bigdata.core.op.LookupExpression;
 import com.bigdata.core.op.Operator;
 import com.bigdata.core.query.Catalog;
-import com.bigdata.core.query.DataQuery;
 import com.bigdata.core.query.QueryBuilder;
 import com.bigdata.core.query.TableSchema;
 import com.bigdata.dao.intf.DataDAO;
+import com.bigdata.dao.model.Query;
 import graphql.language.*;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -25,11 +25,11 @@ public abstract class BaseDataLoader<T> implements DataFetcher<T> {
         LookupExpression.LookupExpressionBuilder filterExpressionBuilder = this.scanExpressions(environment.getFields());
         LookupExpression expression = projectionExpression.merge(filterExpressionBuilder).build();
 
-        DataQuery query = queryBuilder.buildQuery(expression);
+        Query query = queryBuilder.buildQuery(expression);
         return this.fetch(query);
     }
 
-    public abstract T fetch(DataQuery query);
+    public abstract T fetch(Query query);
 
     private LookupExpression.LookupExpressionBuilder scanProjections(List<Field> fields) {
         Field field = fields.get(0);

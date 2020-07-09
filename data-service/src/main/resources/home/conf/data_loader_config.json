@@ -1,5 +1,5 @@
 {
-  "lookupEntity": "com.bigdata.core.df.impl.EntityDataLoader",
-  "lookupEntityByType": "com.bigdata.core.df.impl.EntityDataLoader",
-  "lookupEntityIdType": "com.bigdata.core.df.impl.EntityDataLoader"
+  "lookupEntity": "SingleObject",
+  "lookupEntityByType": "MultipleObject",
+  "lookupEntityIdType": "SingleObject"
 }

@@ -16,7 +16,7 @@ public class CustomExceptionController extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RequestResult<Map<String, Object>>> objectNotFoundExceptionHandler(Exception ex, WebRequest request) {
         ex.printStackTrace();
-        RequestResult<Map<String, Object>> errors = new RequestResult<>(204, "Request is invalid.");
+        RequestResult<Map<String, Object>> errors = new RequestResult<>(500, "Request is invalid.");
         return new ResponseEntity<>(errors, HttpStatus.NO_CONTENT);
     }
 

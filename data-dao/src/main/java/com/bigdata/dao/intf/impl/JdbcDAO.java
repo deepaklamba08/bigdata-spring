@@ -1,8 +1,11 @@
 package com.bigdata.dao.intf.impl;
 
 import com.bigdata.dao.intf.DataDAO;
+import com.bigdata.dao.intf.DataQuery;
+import com.bigdata.dao.model.Query;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 
 import java.util.List;
 import java.util.Map;
@@ -15,19 +18,19 @@ public class JdbcDAO implements DataDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Map<String, Object> execute(String query, List<Object> parameters) {
-        Map<String, Object> data = this.jdbcTemplate.query(query, parameters.toArray(), extractor -> {
-            if (extractor.next()) {
-                return new ColumnMapRowMapper().mapRow(extractor, 0);
-            } else {
-                return null;
-            }
-
-        });
+    @Override
+    public Map<String, Object> lookupRecord(Query query) {
+        DataQuery dataQuery = (DataQuery) query;
+        ResultSetExtractor<Map<String, Object>> extractor = resultSet -> resultSet.next() ? new ColumnMapRowMapper().mapRow(resultSet, 0) : null;
+        Map<String, Object> data = this.jdbcTemplate.query(dataQuery.getQuery(), dataQuery.getParameters().toArray(), extractor);
         return data;
+
     }
 
-    public List<Map<String, Object>> executeQuery(String query, List<Object> parameters) {
-        return this.jdbcTemplate.queryForList(query, parameters.toArray());
+    @Override
+    public List<Map<String, Object>> lookup(Query query) {
+        DataQuery dataQuery = (DataQuery) query;
+        return this.jdbcTemplate.queryForList(dataQuery.getQuery(), dataQuery.getParameters().toArray());
     }
+
 }

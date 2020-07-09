@@ -1,9 +1,11 @@
-package com.bigdata.core.query;
+package com.bigdata.dao.intf;
+
+import com.bigdata.dao.model.Query;
 
 import java.util.List;
 import java.util.Map;
 
-public class DataQuery {
+public class DataQuery implements Query {
     private String query;
     private List<Object> parameters;
 

@@ -6,7 +6,7 @@ import com.bigdata.core.op.Operator;
 import com.bigdata.core.op.OperatorParser;
 import com.bigdata.core.op.SqlOperatorParser;
 import com.bigdata.core.query.Catalog;
-import com.bigdata.core.query.DataQuery;
+import com.bigdata.dao.intf.DataQuery;
 import com.bigdata.core.query.QueryBuilder;
 import com.bigdata.core.query.TableSchema;
 import org.jetbrains.annotations.NotNull;

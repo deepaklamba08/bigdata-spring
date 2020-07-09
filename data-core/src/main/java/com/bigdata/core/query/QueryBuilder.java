@@ -1,7 +1,8 @@
 package com.bigdata.core.query;
 
 import com.bigdata.core.op.LookupExpression;
+import com.bigdata.dao.model.Query;
 
 public interface QueryBuilder {
-    DataQuery buildQuery(LookupExpression expression);
+    Query buildQuery(LookupExpression expression);
 }
