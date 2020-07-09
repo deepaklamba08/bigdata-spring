@@ -1,0 +1,21 @@
+2020-07-09 14:31:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "INSERT INTO ENTITY('1'[*],'A','AB') "; expected "identifier"; SQL statement:
+insert into entity('1','A','AB') [42001-199]
+2020-07-09 14:31:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "INSERT INTO ENTITY('2'[*],'A','AB') "; expected "identifier"; SQL statement:
+insert into entity('2','A','AB') [42001-199]
+2020-07-09 14:31:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "INSERT INTO ENTITY('3'[*],'A','AB') "; expected "identifier"; SQL statement:
+insert into entity('3','A','AB') [42001-199]
+2020-07-09 14:31:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "INSERT INTO ENTITY('4'[*],'B','BCD') "; expected "identifier"; SQL statement:
+insert into entity('4','B','BCD') [42001-199]
+2020-07-09 14:31:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "INSERT INTO ENTITY('5'[*],'B','BCD') "; expected "identifier"; SQL statement:
+insert into entity('5','B','BCD') [42001-199]
+2020-07-09 14:31:57 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "INSERT INTO ENTITY('6'[*],'C','BCD') "; expected "identifier"; SQL statement:
+insert into entity('6','C','BCD') [42001-199]
+2020-07-09 15:03:58 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "ENTITY" not found; SQL statement:
+SELECT entity.DATA as "data", entity.ID as "id", entity.TYPE as "type" FROM ENTITY entity WHERE (entity.ID = ?) AND (entity.TYPE = ?) [42102-196]
