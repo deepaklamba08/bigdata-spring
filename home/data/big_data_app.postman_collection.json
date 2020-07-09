@@ -12,7 +12,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"query\": \"{lookupEntityIdType(id:\\\"2\\\",type:\\\"aa\\\"){id type data}}\",\n  \"parameters\":{\"$id\":\"20\"}\n}",
+					"raw": "{\n  \"query\": \"{lookupEntity(id:\\\"1\\\"){id type data} lookupEntityByType(type:\\\"A\\\"){id type data} lookupEntityIdType(id:\\\"2\\\",type:\\\"A\\\"){id type data}}\",\n  \"parameters\":{\"$id\":\"20\"}\n}",
 					"options": {
 						"raw": {
 							"language": "json"

@@ -58,9 +58,9 @@ public class LookupExpression {
 
         public LookupExpressionBuilder merge(LookupExpressionBuilder expressionBuilder) {
             expressionBuilder.projections.entrySet().forEach(entry -> {
-                BiFunction<TableSchema, Set<String>, Set<String>> biFunction = (tableSchema, strings) -> {
+                BiFunction<TableSchema, Set<String>, Set<String>> biFunction = (tableSchema, column) -> {
                     Set<String> columns = entry.getValue();
-                    columns.addAll(entry.getValue());
+                    columns.addAll(column);
                     return columns;
                 };
                 this.projections.compute(entry.getKey(), biFunction);
