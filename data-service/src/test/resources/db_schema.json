@@ -1,0 +1,34 @@
+{
+  "dialect": "other",
+  "joinExpressions": {
+    "author~book": "AUTHOR author INNER JOIN BOOK book ON book.AUTHOR_ID=author.ID"
+  },
+  "queryAliases": {
+    "book": "book",
+    "bookBy": "book",
+    "author": "author",
+    "bookById": "book"
+  },
+  "tables": [
+    {
+      "tableName": "BOOK",
+      "alias": "book",
+      "columns": {
+        "id": "ID",
+        "isn": "ISN",
+        "title": "TITLE",
+        "authorName": "AUTHOR_NAME",
+        "publisher": "PUBLISHER",
+        "publishedDate": "PUBLISH_DATE"
+      }
+    },
+    {
+      "tableName": "AUTHOR",
+      "alias": "author",
+      "columns": {
+        "name": "NAME",
+        "age": "AGE"
+      }
+    }
+  ]
+}

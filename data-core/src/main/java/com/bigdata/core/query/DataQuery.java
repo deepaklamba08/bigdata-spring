@@ -20,4 +20,8 @@ public class DataQuery {
         return parameters;
     }
 
+    @Override
+    public String toString() {
+        return query + '\n' + parameters;
+    }
 }

@@ -2,3 +2,11 @@
 /data-core/target/
 /data-dao/target/
 /data-service/target/
+/bigdata-spring.iml
+/.idea/codeStyles/codeStyleConfig.xml
+/.idea/compiler.xml
+/.idea/encodings.xml
+/.idea/misc.xml
+/.idea/sbt.xml
+/.idea/uiDesigner.xml
+/.idea/vcs.xml

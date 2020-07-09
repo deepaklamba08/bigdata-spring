@@ -11,7 +11,11 @@
 
     <artifactId>data-core</artifactId>
 
+    <properties>
+    </properties>
+
     <dependencies>
+
         <dependency>
             <artifactId>data-dao</artifactId>
             <groupId>com.bigdata</groupId>

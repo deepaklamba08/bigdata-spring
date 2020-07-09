@@ -24,30 +24,38 @@ public class SchemaUtil {
         return mapper;
     }
 
-    public static SchemaProvider buildSchema(File schemaFile) throws IOException {
-
+    public static Catalog readCatalog(File schemaFile) throws IOException {
         JsonNode schemaNode = mapper.readTree(schemaFile);
         Map<String, String> joinExpressions = readAsMap(schemaNode.get(JOIN_EXPRESSIONS));
         Map<String, String> queryAliases = readAsMap(schemaNode.get(QUERY_ALIASES));
 
-        SchemaProvider schemaProvider = new SchemaProvider();
-        schemaProvider.setJoinExpressions(joinExpressions);
-        schemaProvider.setQueryAliases(queryAliases);
+        Catalog.CatalogBuilder catalogBuilder = new Catalog.CatalogBuilder();
+        if (joinExpressions != null) {
+            for (Map.Entry<String, String> entry : joinExpressions.entrySet()) {
+                catalogBuilder.withJoinExpressions(entry.getKey(), entry.getValue());
+            }
+        }
+        if (queryAliases != null) {
+            for (Map.Entry<String, String> entry : queryAliases.entrySet()) {
+                catalogBuilder.withQueryAliases(entry.getKey(), entry.getValue());
+            }
+        }
+
         ArrayNode tables = (ArrayNode) schemaNode.get(TABLES);
         for (JsonNode table : tables) {
-            schemaProvider.addTableSchema(readTableSchema(table));
+            catalogBuilder = catalogBuilder.withTableSchema(readTableSchema(table));
         }
-        schemaProvider.setDialect(schemaNode.get(DIALECT).asText());
+        catalogBuilder = catalogBuilder.withDialect(schemaNode.get(DIALECT).asText());
 
-        return schemaProvider;
+        return catalogBuilder.build();
     }
 
-    private static SchemaProvider.TableSchema readTableSchema(JsonNode table) {
+    private static TableSchema readTableSchema(JsonNode table) {
 
         String tableName = table.get("tableName").asText();
         String alias = table.get("alias").asText();
         Map<String, String> columns = readAsMap(table.get("columns"));
-        return new SchemaProvider.TableSchema(tableName, alias, columns);
+        return new TableSchema(tableName, alias, columns);
     }
 
     public static Map<String, String> readAsMap(File dataFile) throws IOException {

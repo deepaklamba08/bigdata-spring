@@ -6,6 +6,7 @@ type Query{
   allBooks: [Book]
   book(id: String): Book
   bookBy(title:String, authorName:String):Book
+  bookById(id:[String]):[Book]
 }
 
 type Author{

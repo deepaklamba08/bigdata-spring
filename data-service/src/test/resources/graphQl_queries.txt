@@ -1,0 +1,2 @@
+{bookBy(title:"a lion" authorName : "shane"){title publisher author{name age}}}
+{bookById(id:["1","2"]){title publisher }}

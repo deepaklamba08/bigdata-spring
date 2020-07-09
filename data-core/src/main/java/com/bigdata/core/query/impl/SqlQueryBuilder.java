@@ -1,9 +1,8 @@
 package com.bigdata.core.query.impl;
 
 
-import com.bigdata.core.query.DataQuery;
-import com.bigdata.core.query.QueryBuilder;
-import com.bigdata.core.query.SchemaProvider;
+import com.bigdata.core.op.LookupExpression;
+import com.bigdata.core.query.*;
 import graphql.language.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.util.Pair;
@@ -13,88 +12,72 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.bigdata.core.op.Operator;
+import com.bigdata.core.op.OperatorParser;
+import com.bigdata.core.op.SqlOperatorParser;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 public class SqlQueryBuilder implements QueryBuilder {
 
-    private SchemaProvider schemaProvider;
+    private Catalog catalog;
+    //    private SchemaProvider schemaProvider;
+    private SqlOperatorParser operatorParser;
 
-    public SqlQueryBuilder(SchemaProvider schemaProvider) {
-        this.schemaProvider = schemaProvider;
+    public SqlQueryBuilder(Catalog catalog/*SchemaProvider schemaProvider*/) {
+        //      this.schemaProvider = schemaProvider;
+        this.catalog = catalog;
+        this.operatorParser = new SqlOperatorParser();
     }
 
     @Override
-    public DataQuery buildQuery(Map<String, List<String>> selectionSet, Map<String, List<Pair<String, Value>>> expressions) {
-        Optional<String> projections = selectionSet.entrySet().stream().map(pair -> {
-            String tableAlias = this.schemaProvider.getQueryAliases(pair.getKey());
-            SchemaProvider.TableSchema table = schemaProvider.getTableSchema(tableAlias);
-            return this.getQuotedString(pair.getValue(), table, schemaProvider.getDialect());
-        }).reduce((v1, v2) -> v1 + ", " + v2);
+    public DataQuery buildQuery(LookupExpression expression) {
 
+        Optional<String> projections = expression.getProjections().entrySet().stream().map(pair ->
+                this.getQuotedString(pair.getValue(), pair.getKey(), catalog.getDialect())
+        ).reduce((v1, v2) -> v1 + ", " + v2);
         StringBuilder query = new StringBuilder("SELECT ");
-        query.append(projections.get()).append(" FROM ").append(this.buildSelectionSet(selectionSet.keySet()));
-        List<Pair<String, Object>> expressPairs = expressions.entrySet().stream().flatMap(pair -> {
-            String tableAlias = this.schemaProvider.getQueryAliases(pair.getKey());
-            SchemaProvider.TableSchema table = schemaProvider.getTableSchema(tableAlias);
-            Stream<Pair<String, Object>> expressionPairs = pair.getValue().stream().map(expression -> this.parseExpression(table.getColumnName(expression.getFirst()), tableAlias, expression.getSecond()));
-            return expressionPairs;
-        }).collect(Collectors.toList());
+        Set<TableSchema> selectionSet = expression.getProjections().keySet();
+        query.append(projections.get()).append(" FROM ").append(this.buildSelectionSet(selectionSet));
 
-        List<Object> parameters = expressPairs.stream().map(p -> p.getSecond()).collect(Collectors.toList());
-        Optional<String> whereClause = expressPairs.stream().map(p -> p.getFirst()).reduce((e1, e2) -> e1 + " AND " + e2);
-        if (whereClause.isPresent()) {
-            query.append(" WHERE (").append(whereClause.get()).append(")");
-        }
+        Operator.And operator = new Operator.And(expression.getFilters().values());
+        OperatorParser.SqlExpression sqlExpression = operatorParser.parse(operator);
+        query.append(" WHERE ").append(sqlExpression.getExpression());
+        List<Object> parameters = sqlExpression.getParameters().stream().flatMap(parameter -> {
+            if (parameter instanceof Operator.ArrayValue) {
+                Operator.ArrayValue arrayValue = (Operator.ArrayValue) parameter;
+                return arrayValue.getValue().stream().map(p -> p.getValue());
+            } else {
+                return Stream.of(parameter.getValue());
+            }
+
+        }).collect(Collectors.toList());
 
         return new DataQuery(query.toString(), parameters);
     }
 
     @NotNull
-    private String getQuotedString(List<String> columnAliases, SchemaProvider.TableSchema table, String dialect) {
-        Function<String, String> mapper = null;
+    private String getQuotedString(Collection<String> columns, TableSchema table, String dialect) {
+        Function<String, String> mapper;
         if ("HIVE".equalsIgnoreCase(dialect)) {
-            mapper = columnAlias -> table.getAlias() + "." + table.getColumnName(columnAlias) + " as " + columnAlias;
+            mapper = columnName -> table.getAlias() + "." + columnName + " as " + table.getColumnAlias(columnName);
         } else {
-            mapper = columnAlias -> table.getAlias() + "." + table.getColumnName(columnAlias) + " as \"" + columnAlias + "\"";
+            mapper = columnName -> table.getAlias() + "." + columnName + " as \"" + table.getColumnAlias(columnName) + "\"";
         }
-        return columnAliases.stream().map(mapper).reduce((v1, v2) -> v1 + ", " + v2).get();
+        return columns.stream().map(mapper).reduce((v1, v2) -> v1 + ", " + v2).get();
     }
 
-    private Pair<String, Object> parseExpression(String columnName, String tableAlias, Value value) {
-
-        if (value instanceof BooleanValue) {
-            String expression = tableAlias + "." + columnName + " = ? ";
-            BooleanValue booleanValue = (BooleanValue) value;
-            return Pair.of(expression, booleanValue.isValue());
-        } else if (value instanceof EnumValue) {
-            String expression = tableAlias + "." + columnName + " = ? ";
-            EnumValue enumValue = (EnumValue) value;
-            return Pair.of(expression, enumValue.getName());
-        } else if (value instanceof FloatValue) {
-            String expression = tableAlias + "." + columnName + " = ? ";
-            FloatValue floatValue = (FloatValue) value;
-            return Pair.of(expression, floatValue.getValue());
-        } else if (value instanceof IntValue) {
-            String expression = tableAlias + "." + columnName + " = ? ";
-            IntValue intValue = (IntValue) value;
-            return Pair.of(expression, intValue.getValue());
-        } else if (value instanceof StringValue) {
-            String expression = tableAlias + "." + columnName + " = ? ";
-            StringValue stringValue = (StringValue) value;
-            return Pair.of(expression, stringValue.getValue());
-        } else {
-            throw new IllegalStateException("value type not supported - " + value.getClass());
-        }
-    }
-
-
-    private String buildSelectionSet(Set<String> tableAliases) {
-        Iterator<String> aliasesItr = tableAliases.iterator();
-        if (tableAliases.size() == 1) {
-            String tableAlias = this.schemaProvider.getQueryAliases(aliasesItr.next());
-            SchemaProvider.TableSchema tableSchema = this.schemaProvider.getTableSchema(tableAlias);
+    private String buildSelectionSet(Set<TableSchema> tableNames) {
+        Iterator<TableSchema> tables = tableNames.iterator();
+        if (tableNames.size() == 1) {
+            TableSchema tableSchema = tables.next();
             return tableSchema.getTableName() + " " + tableSchema.getAlias();
         } else {
-            String key = tableAliases.stream().sorted(String::compareTo).reduce((a1, a2) -> a1 + "~" + a2).get();
-            return this.schemaProvider.getJoinExpression(key);
+            String key = tableNames.stream().map(t -> t.getAlias()).sorted(String::compareTo).reduce((a1, a2) -> a1 + "~" + a2).get();
+            return this.catalog.getJoinExpression(key);
         }
     }
 

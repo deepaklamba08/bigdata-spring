@@ -1,98 +1,137 @@
 package com.bigdata.core.df.intf;
 
+import com.bigdata.core.op.LookupExpression;
+import com.bigdata.core.op.Operator;
+import com.bigdata.core.query.Catalog;
 import com.bigdata.core.query.DataQuery;
 import com.bigdata.core.query.QueryBuilder;
+import com.bigdata.core.query.TableSchema;
 import com.bigdata.dao.intf.DataDAO;
 import graphql.language.*;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.springframework.data.util.Pair;
 
-import java.util.*;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class BaseDataLoader<T> implements DataFetcher<T> {
     private QueryBuilder queryBuilder;
+    private Catalog catalog;
     protected DataDAO dataDAO;
-
-    public void init(QueryBuilder queryBuilder,DataDAO dataDAO) {
-        this.queryBuilder = queryBuilder;
-        this.dataDAO=dataDAO;
-    }
 
     @Override
     public T get(DataFetchingEnvironment environment) {
-        Map<String, List<String>> projections = this.scanProjections(environment.getFields());
-        Map<String, List<Pair<String, Value>>> expressions = this.scanExpressions(environment.getFields());
-        DataQuery query = queryBuilder.buildQuery(projections, expressions);
+        LookupExpression.LookupExpressionBuilder projectionExpression = this.scanProjections(environment.getFields());
+        LookupExpression.LookupExpressionBuilder filterExpressionBuilder = this.scanExpressions(environment.getFields());
+        LookupExpression expression = projectionExpression.merge(filterExpressionBuilder).build();
+
+        DataQuery query = queryBuilder.buildQuery(expression);
         return this.fetch(query);
     }
 
     public abstract T fetch(DataQuery query);
 
-    private Map<String, List<String>> scanProjections(List<Field> fields) {
+    private LookupExpression.LookupExpressionBuilder scanProjections(List<Field> fields) {
         Field field = fields.get(0);
         List<Selection> selections = field.getSelectionSet().getSelections();
-        Function<Field, String> mapper = (f) -> f.getName();
-        BinaryOperator<Map<String, List<String>>> reducer = this.createReducer();
-        Map<String, List<String>> projections = selections.stream().map(s -> parse(s, field.getName(), mapper, reducer)).reduce(reducer).get();
-        return projections;
+        String tableAlias = this.catalog.getTableAlias(field.getName());
+        TableSchema tableSchema = this.catalog.getTableSchemaByAlias(tableAlias);
+
+        LookupExpression.LookupExpressionBuilder expressionBuilder = selections.stream().map(s -> parseProjections(s, tableSchema)).reduce((e1, e2) -> e1.merge(e2)).get();
+
+        return expressionBuilder;
     }
 
-    private Map<String, List<Pair<String, Value>>> scanExpressions(List<Field> fields) {
+    private LookupExpression.LookupExpressionBuilder scanExpressions(List<Field> fields) {
         Field field = fields.get(0);
+        String tableAlias = this.catalog.getTableAlias(field.getName());
+        TableSchema tableSchema = this.catalog.getTableSchemaByAlias(tableAlias);
+
         List<Selection> selections = field.getSelectionSet().getSelections();
-        Function<Field, List<Argument>> mapper = (f) -> f.getArguments();
-        BinaryOperator<Map<String, List<List<Argument>>>> reducer = this.createReducer();
-        Map<String, List<List<Argument>>> expressions = selections.stream().map(s -> parse(s, field.getName(), mapper, reducer)).reduce(reducer).get();
 
-        Map<String, List<Pair<String, Value>>> expressionMap = expressions.entrySet().stream().map(entry -> {
-            List<Pair<String, Value>> values = entry.getValue().stream().flatMap(arguments -> arguments.stream().map(argument -> Pair.of(argument.getName(), argument.getValue()))).collect(Collectors.toList());
-            return Pair.of(entry.getKey(), values);
-        }).collect(Collectors.toMap(k -> k.getFirst(), k -> k.getSecond()));
-
-        List<Pair<String, Value>> args = field.getArguments().stream().map(argument -> Pair.of(argument.getName(), argument.getValue())).collect(Collectors.toList());
-        List<Pair<String, Value>> old = expressionMap.get(field.getName());
-        old.addAll(args);
-        expressionMap.put(field.getName(), old);
-        return expressionMap;
+        LookupExpression.LookupExpressionBuilder expressionBuilder = selections.stream().map(s -> parseFilters(s, tableSchema)).reduce((e1, e2) -> e1.merge(e2)).get();
+        field.getArguments().forEach(arg -> expressionBuilder.withfilter(tableSchema, createOperator(arg, tableSchema)));
+        return expressionBuilder;
     }
 
-    private <T> Map<String, List<T>> parse(Selection selection, String source, Function<Field, T> mapper, BinaryOperator<Map<String, List<T>>> reducer) {
+    private LookupExpression.LookupExpressionBuilder parseProjections(Selection selection,
+                                                                      TableSchema sourceSchema
+    ) {
         Field sfield = (Field) selection;
         SelectionSet childSelections = sfield.getSelectionSet();
         if (childSelections != null) {
-            return childSelections.getSelections().stream().map(s -> parse(s, sfield.getName(), mapper, reducer)).reduce(reducer).get();
+            String alias = this.catalog.getTableAlias(sfield.getName());
+            TableSchema childSchema = this.catalog.getTableSchemaByAlias(alias);
+            return childSelections.getSelections().stream().map(s -> parseProjections(s, childSchema)).reduce((e1, e2) -> e1.merge(e2)).get();
         } else {
-            Map<String, List<T>> op = new LinkedHashMap<>(1);
-            op.put(source, Collections.singletonList(mapper.apply(sfield)));
-            return op;
+            LookupExpression.LookupExpressionBuilder expressionBuilder = new LookupExpression.LookupExpressionBuilder();
+            return expressionBuilder.withProjection(sourceSchema, sourceSchema.getColumnName(sfield.getName()));
         }
     }
 
-    private <T> BinaryOperator<Map<String, List<T>>> createReducer() {
-        BinaryOperator<Map<String, List<T>>> reducer = (mapOne, mapTwo) -> {
-            Set<String> keys = new HashSet<>(mapOne.keySet());
-            keys.addAll(mapTwo.keySet());
-            Map<String, List<T>> op = new LinkedHashMap<>(keys.size());
-            for (String key : keys) {
-                List<T> values = new ArrayList<>();
-                List<T> v1 = mapOne.get(key);
-                if (v1 != null) {
-                    values.addAll(v1);
-                }
-                v1 = mapTwo.get(key);
-                if (v1 != null) {
-                    values.addAll(v1);
-                }
-                op.put(key, values);
-            }
-            return op;
-        };
-        return reducer;
+    private LookupExpression.LookupExpressionBuilder parseFilters(Selection selection,
+                                                                  TableSchema tableSchema
+    ) {
+        Field sfield = (Field) selection;
+        SelectionSet childSelections = sfield.getSelectionSet();
+        if (childSelections != null) {
+            String alias = this.catalog.getTableAlias(sfield.getName());
+            TableSchema childSchema = this.catalog.getTableSchemaByAlias(alias);
+            return childSelections.getSelections().stream().map(s -> parseFilters(s, childSchema)).reduce((e1, e2) -> e1.merge(e2)).get();
+        } else {
+            LookupExpression.LookupExpressionBuilder expressionBuilder = new LookupExpression.LookupExpressionBuilder();
+            sfield.getArguments().forEach(argument -> {
+                expressionBuilder.withfilter(tableSchema, createOperator(argument, tableSchema));
+            });
+            return expressionBuilder;
+        }
     }
 
+    private Operator createOperator(Argument argument, TableSchema tableSchema) {
+        String key = tableSchema.getAlias() + "." + tableSchema.getColumnName(argument.getName());
+        Value value = argument.getValue();
+        if ((value instanceof StringValue)
+                | (value instanceof IntValue)
+                | (value instanceof BooleanValue)
+                | (value instanceof FloatValue)
+                | (value instanceof EnumValue)) {
+            return new Operator.Equals(key, createValue(value));
+        } else if (value instanceof ArrayValue) {
+            Operator.ArrayValue arrayValue = (Operator.ArrayValue) this.createValue(value);
+            return new Operator.In(key, arrayValue);
+        } else {
+            throw new IllegalStateException("");
+        }
+    }
 
+    private Operator.Value createValue(Value value) {
+        if (value instanceof StringValue) {
+            StringValue stringValue = (StringValue) value;
+            return new Operator.StringValue(stringValue.getValue());
+        } else if (value instanceof IntValue) {
+            IntValue intValue = (IntValue) value;
+            return new Operator.NumberValue(intValue.getValue());
+        } else if (value instanceof BooleanValue) {
+            BooleanValue booleanValue = (BooleanValue) value;
+            return new Operator.BooleanValue(booleanValue.isValue());
+        } else if (value instanceof FloatValue) {
+            FloatValue floatValue = (FloatValue) value;
+            return new Operator.NumberValue(floatValue.getValue());
+        } else if (value instanceof EnumValue) {
+            EnumValue enumValue = (EnumValue) value;
+            return new Operator.StringValue(enumValue.getName());
+        } else if (value instanceof ArrayValue) {
+            ArrayValue arrayValue = (ArrayValue) value;
+            List<Operator.SingleValue> values = arrayValue.getValues().stream().map(v -> (Operator.SingleValue) createValue(v)).collect(Collectors.toList());
+            return new Operator.ArrayValue(values);
+        } else {
+            throw new IllegalStateException("");
+        }
+    }
+
+    public void init(QueryBuilder queryBuilder, Catalog catalog, DataDAO dataDAO) {
+        this.queryBuilder = queryBuilder;
+        this.catalog = catalog;
+        this.dataDAO = dataDAO;
+    }
 }

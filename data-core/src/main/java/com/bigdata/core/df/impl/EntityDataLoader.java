@@ -10,6 +10,7 @@ public class EntityDataLoader extends BaseDataLoader<Map<String, Object>> {
 
     @Override
     public Map<String, Object> fetch(DataQuery query) {
-        return this.dataDAO.execute(query.getQuery(), query.getParameters());
+       return null;
+        // return super.dataDAO.execute(query.getQuery(), query.getParameters());
     }
 }

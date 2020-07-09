@@ -28,7 +28,7 @@ public class DataFetcherFactory {
             Object dataLoader = clzz.newInstance();
             if (dataLoader instanceof BaseDataLoader<?>) {
                 BaseDataLoader<T> tBaseDataLoader = (BaseDataLoader<T>) dataLoader;
-                tBaseDataLoader.init(queryBuilder, dataDAO);
+                tBaseDataLoader.init(queryBuilder,null,dataDAO);
                 return tBaseDataLoader;
             } else {
                 throw new IllegalStateException("Error occurred while creating data loader.");

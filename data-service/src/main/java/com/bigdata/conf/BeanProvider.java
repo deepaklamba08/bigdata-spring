@@ -1,9 +1,8 @@
 package com.bigdata.conf;
 
-import com.bigdata.core.df.impl.EntityDataLoader;
 import com.bigdata.core.df.intf.DataFetcherFactory;
+import com.bigdata.core.query.Catalog;
 import com.bigdata.core.query.QueryBuilder;
-import com.bigdata.core.query.SchemaProvider;
 import com.bigdata.core.query.SchemaUtil;
 import com.bigdata.core.query.impl.SqlQueryBuilder;
 import com.bigdata.dao.intf.DataDAO;
@@ -22,7 +21,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.function.UnaryOperator;
 
 @Configuration
 public class BeanProvider {
@@ -55,8 +53,8 @@ public class BeanProvider {
     }
 
     private RuntimeWiring buildRuntimeWiring() throws IOException {
-        SchemaProvider schemaProvider = SchemaUtil.buildSchema(new File(serviceProperties.getDatabaseMappingFilePath()));
-        QueryBuilder queryBuilder = new SqlQueryBuilder(schemaProvider);
+        Catalog catalog = SchemaUtil.readCatalog(new File(serviceProperties.getDatabaseMappingFilePath()));
+        QueryBuilder queryBuilder = new SqlQueryBuilder(catalog);
 
         DataDAO dataDAO = new JdbcDAO(this.createJdbcTemplate());
         DataFetcherFactory fetcherFactory = new DataFetcherFactory();

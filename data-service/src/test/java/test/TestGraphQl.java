@@ -1,5 +1,12 @@
 package test;
 
+import com.bigdata.core.df.intf.BaseDataLoader;
+import com.bigdata.core.query.Catalog;
+import com.bigdata.core.query.QueryBuilder;
+import com.bigdata.core.query.SchemaUtil;
+import com.bigdata.core.query.impl.SqlQueryBuilder;
+import com.bigdata.dao.intf.DataDAO;
+import com.bigdata.dao.intf.impl.JdbcDAO;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
@@ -11,10 +18,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.File;
+import java.io.IOException;
 
 public class TestGraphQl {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.h2.Driver");
@@ -22,36 +30,21 @@ public class TestGraphQl {
         dataSource.setUsername("sa");
         dataSource.setPassword("password");
 
-        SchemaProvider schemaProvider = getSchemaProvider();
-
+        Catalog catalog = SchemaUtil.readCatalog(new File("D:\\dev\\learning\\bigdata-spring\\data-service\\src\\test\\resources\\db_schema.json"));
         DataDAO dataDAO = new JdbcDAO(new JdbcTemplate(dataSource));
-        QueryBuilder queryBuilder = new SqlQueryBuilder(schemaProvider);
+        QueryBuilder queryBuilder = new SqlQueryBuilder(catalog);
 
         File schemaFile = new File("D:\\dev\\learning\\bigdata-spring\\data-service\\src\\test\\resources\\schema.txt");
         TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(schemaFile);
-        RuntimeWiring runtimeWiring = buildRuntimeWiring(dataDAO, queryBuilder);
+        RuntimeWiring runtimeWiring = buildRuntimeWiring(dataDAO, queryBuilder, catalog);
 
 
         GraphQLSchema graphQLSchema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
-    /*
-    {
-   book(id:"1001"){
-      title
-   }
 
-   allBooks{
-       isn
-       title
-       author
-       publisher
-       publishedDate
-   }
-}
-     */
-//        String query = "{book(id:\"1001\"){title publisher author{name age}}}";
+       // String query = "{bookBy(title:\"a lion\" authorName : \"shane\"){title publisher author{name age}}}";
 
-        String query = "{bookBy(title:\"a lion\" authorName : \"shane\"){title publisher author{name age}}}";
+        String query="{bookById(id:[\"1\",\"2\"]){title publisher}}";
         ExecutionResult executionResult = graphQL.execute(query);
 
 
@@ -61,42 +54,15 @@ public class TestGraphQl {
 
     }
 
-    private static SchemaProvider getSchemaProvider() {
-        SchemaProvider.TableSchema bookTableSchema = new SchemaProvider.TableSchema();
-
-        bookTableSchema.setAlias("book");
-        bookTableSchema.setTableName("BOOK");
-        bookTableSchema.addColumn("id", "ID");
-        bookTableSchema.addColumn("isn", "ISN");
-        bookTableSchema.addColumn("title", "TITLE");
-        bookTableSchema.addColumn("authorName", "AUTHOR_NAME");
-        bookTableSchema.addColumn("publisher", "PUBLISHER");
-        bookTableSchema.addColumn("publishedDate", "PUBLISH_DATE");
-
-        SchemaProvider.TableSchema authorTableSchema = new SchemaProvider.TableSchema();
-        authorTableSchema.setAlias("author");
-        authorTableSchema.setTableName("AUTHOR");
-        authorTableSchema.addColumn("name", "NAME");
-        authorTableSchema.addColumn("age", "AGE");
-
-        SchemaProvider schemaProvider = new SchemaProvider();
-        schemaProvider.addTableSchema(bookTableSchema);
-        schemaProvider.addTableSchema(authorTableSchema);
-        schemaProvider.addQueryAliases("book", "book");
-        schemaProvider.addQueryAliases("bookBy", "book");
-        schemaProvider.addQueryAliases("author", "author");
-
-        schemaProvider.addJoinExpression("author~book", "AUTHOR author inner join BOOK book on author.id=book.author_id");
-        schemaProvider.addJoinExpression("author~bookBy","AUTHOR author inner join BOOK book on author.id=book.author_id");
-        return schemaProvider;
-    }
-
-    private static RuntimeWiring buildRuntimeWiring(DataDAO dataDAO, QueryBuilder queryBuilder) {
+    private static RuntimeWiring buildRuntimeWiring(DataDAO dataDAO, QueryBuilder queryBuilder, Catalog catalog) {
+        BaseDataLoader<Book> dataLoader = new BookLoader();
+        dataLoader.init(queryBuilder, catalog, dataDAO);
         return RuntimeWiring.newRuntimeWiring()
                 .type("Query", typeWiring -> typeWiring
                         .dataFetcher("allBooks", new AllBooksLoader())
-                        .dataFetcher("book", new BookLoader(dataDAO, queryBuilder))
-                        .dataFetcher("bookBy", new BookLoader(dataDAO, queryBuilder))).build();
+                        .dataFetcher("book", dataLoader)
+                        .dataFetcher("bookBy", dataLoader)
+                        .dataFetcher("bookById", dataLoader)).build();
     }
 
 }

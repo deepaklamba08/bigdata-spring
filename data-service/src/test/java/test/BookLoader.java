@@ -1,19 +1,17 @@
 package test;
 
+import com.bigdata.core.df.intf.BaseDataLoader;
+import com.bigdata.core.query.DataQuery;
+import com.bigdata.dao.intf.impl.JdbcDAO;
+
 import java.util.Map;
 
 public class BookLoader extends BaseDataLoader<Book> {
 
-    private DataDAO dataDAO;
-
-    public BookLoader(DataDAO dataDAO, QueryBuilder queryBuilder) {
-        super(queryBuilder);
-        this.dataDAO = dataDAO;
-    }
-
     @Override
     public Book fetch(DataQuery query) {
-        Map<String, Object> data = dataDAO.execute(query.getQuery(), query.getParameters());
+        JdbcDAO jdbcDAO = (JdbcDAO) this.dataDAO;
+        Map<String, Object> data = jdbcDAO.execute(query.getQuery(), query.getParameters());
 
         return new Book(asString(data, "isn"),
                 asString(data, "title"),

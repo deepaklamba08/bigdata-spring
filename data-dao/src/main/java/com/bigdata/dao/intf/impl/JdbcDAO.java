@@ -15,7 +15,6 @@ public class JdbcDAO implements DataDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Override
     public Map<String, Object> execute(String query, List<Object> parameters) {
         Map<String, Object> data = this.jdbcTemplate.query(query, parameters.toArray(), extractor -> {
             if (extractor.next()) {
@@ -28,7 +27,6 @@ public class JdbcDAO implements DataDAO {
         return data;
     }
 
-    @Override
     public List<Map<String, Object>> executeQuery(String query, List<Object> parameters) {
         return this.jdbcTemplate.queryForList(query, parameters.toArray());
     }
