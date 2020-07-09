@@ -6,6 +6,7 @@ import com.bigdata.core.query.QueryBuilder;
 import com.bigdata.core.query.SchemaUtil;
 import com.bigdata.core.query.impl.SqlQueryBuilder;
 import com.bigdata.dao.intf.DataDAO;
+import com.bigdata.dao.intf.impl.DataDAOFactory;
 import com.bigdata.dao.intf.impl.JdbcDAO;
 import com.bigdata.util.ServiceProperties;
 import graphql.GraphQL;
@@ -41,28 +42,16 @@ public class BeanProvider {
         return graphQL;
     }
 
-    private JdbcTemplate createJdbcTemplate() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-
-        Map<String, String> dbCred = this.serviceProperties.getDbCred();
-        dataSource.setDriverClassName(dbCred.get("db.driver.class"));
-        dataSource.setUrl(dbCred.get("db.url"));
-        dataSource.setUsername(dbCred.get("db.user"));
-        dataSource.setPassword(dbCred.get("db.password"));
-
-        return new JdbcTemplate(dataSource);
-    }
-
     private RuntimeWiring buildRuntimeWiring() throws IOException {
         Catalog catalog = SchemaUtil.readCatalog(new File(serviceProperties.getDatabaseMappingFilePath()));
         QueryBuilder queryBuilder = new SqlQueryBuilder(catalog);
 
-        DataDAO dataDAO = new JdbcDAO(this.createJdbcTemplate());
         EnumMap<DataFetcherFactory.FetcherType, String> fetcherTypes = new EnumMap<>(DataFetcherFactory.FetcherType.class);
         fetcherTypes.put(DataFetcherFactory.FetcherType.SingleObject, this.serviceProperties.getSingleObjectProvider());
         fetcherTypes.put(DataFetcherFactory.FetcherType.MultipleObject, this.serviceProperties.getMultipleObjectProvider());
 
-        DataFetcherFactory fetcherFactory = new DataFetcherFactory(queryBuilder, dataDAO, catalog, fetcherTypes);
+        DataDAOFactory dataDAOFactory = new DataDAOFactory(this.serviceProperties.getDbCred());
+        DataFetcherFactory fetcherFactory = new DataFetcherFactory(queryBuilder, dataDAOFactory.createDAO(), catalog, fetcherTypes);
 
         File configFile = new File(this.serviceProperties.getDataLoaderConfigFilePath());
         Map<String, String> config = SchemaUtil.readAsMap(configFile);
