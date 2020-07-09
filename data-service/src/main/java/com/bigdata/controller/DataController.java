@@ -19,6 +19,11 @@ public class DataController {
         this.logger = LoggerFactory.getLogger(this.getClass());
     }
 
+    @RequestMapping(path = "/status", method = RequestMethod.GET)
+    public String checkStatus() {
+        return "running...!!";
+    }
+
     @RequestMapping(path = "/data", method = RequestMethod.POST)
     public RequestResult<Object> lookupData(@RequestBody DataRequest dataRequest) {
         logger.debug("Executing : DataController.lookupData()");
