@@ -2,33 +2,26 @@ package com.bigdata.core.query.impl;
 
 
 import com.bigdata.core.op.LookupExpression;
-import com.bigdata.core.query.*;
-import graphql.language.*;
+import com.bigdata.core.op.Operator;
+import com.bigdata.core.op.OperatorParser;
+import com.bigdata.core.op.SqlOperatorParser;
+import com.bigdata.core.query.Catalog;
+import com.bigdata.core.query.DataQuery;
+import com.bigdata.core.query.QueryBuilder;
+import com.bigdata.core.query.TableSchema;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.bigdata.core.op.Operator;
-import com.bigdata.core.op.OperatorParser;
-import com.bigdata.core.op.SqlOperatorParser;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 public class SqlQueryBuilder implements QueryBuilder {
 
     private Catalog catalog;
-    //    private SchemaProvider schemaProvider;
     private SqlOperatorParser operatorParser;
 
-    public SqlQueryBuilder(Catalog catalog/*SchemaProvider schemaProvider*/) {
-        //      this.schemaProvider = schemaProvider;
+    public SqlQueryBuilder(Catalog catalog) {
         this.catalog = catalog;
         this.operatorParser = new SqlOperatorParser();
     }

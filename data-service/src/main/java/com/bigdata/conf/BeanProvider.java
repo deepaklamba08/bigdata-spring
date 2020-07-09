@@ -57,7 +57,7 @@ public class BeanProvider {
         QueryBuilder queryBuilder = new SqlQueryBuilder(catalog);
 
         DataDAO dataDAO = new JdbcDAO(this.createJdbcTemplate());
-        DataFetcherFactory fetcherFactory = new DataFetcherFactory();
+        DataFetcherFactory fetcherFactory = new DataFetcherFactory(queryBuilder, dataDAO, catalog);
 
         File configFile = new File(this.serviceProperties.getDataLoaderConfigFilePath());
         Map<String, String> config = SchemaUtil.readAsMap(configFile);
@@ -67,7 +67,7 @@ public class BeanProvider {
         builder.typeName("Query");
 
         config.forEach((key, value) -> {
-            builder.dataFetcher(key, fetcherFactory.createDataFetcher(value, queryBuilder, dataDAO));
+            builder.dataFetcher(key, fetcherFactory.createDataFetcher(value));
         });
         return wiring.type(builder.build()).build();
     }

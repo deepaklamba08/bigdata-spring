@@ -1,0 +1,39 @@
+{
+	"info": {
+		"_postman_id": "b4587535-b216-40cd-97a6-376998444bb6",
+		"name": "big_data_app",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Lookup data",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"query\": \"{lookupEntityIdType(id:\\\"2\\\",type:\\\"aa\\\"){id type data}}\",\n  \"parameters\":{\"$id\":\"20\"}\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8181/bigdata/v1/data",
+					"host": [
+						"localhost"
+					],
+					"port": "8181",
+					"path": [
+						"bigdata",
+						"v1",
+						"data"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

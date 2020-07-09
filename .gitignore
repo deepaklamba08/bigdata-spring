@@ -10,3 +10,5 @@
 /.idea/sbt.xml
 /.idea/uiDesigner.xml
 /.idea/vcs.xml
+/data-service/dependency-reduced-pom.xml
+/home/lib/data-service-1.0-SNAPSHOT.jar
