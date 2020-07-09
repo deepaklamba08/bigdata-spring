@@ -3,6 +3,7 @@ package com.bigdata.controller;
 import com.bigdata.model.DataRequest;
 import com.bigdata.service.DataService;
 import com.bigdata.model.RequestResult;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +26,8 @@ public class DataController {
     }
 
     @RequestMapping(path = "/data", method = RequestMethod.POST)
-    public RequestResult<Object> lookupData(@RequestBody DataRequest dataRequest) {
+    public RequestResult<JsonNode> lookupData(@RequestBody DataRequest dataRequest) {
         logger.debug("Executing : DataController.lookupData()");
-        return new RequestResult<>(200, "success", this.dataService.lookupData(dataRequest.getQuery(), dataRequest.getParameters()));
+        return  this.dataService.lookupData(dataRequest.getQuery(), dataRequest.getParameters());
     }
 }
