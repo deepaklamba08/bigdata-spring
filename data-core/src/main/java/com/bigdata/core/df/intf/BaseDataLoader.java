@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public abstract class BaseDataLoader<T> implements DataFetcher<T> {
     private QueryBuilder queryBuilder;
     private Catalog catalog;
-    protected DataDAO dataDAO;
+    protected DataDAO<Query> dataDAO;
 
     @Override
     public T get(DataFetchingEnvironment environment) {
@@ -129,7 +129,7 @@ public abstract class BaseDataLoader<T> implements DataFetcher<T> {
         }
     }
 
-    public void init(QueryBuilder queryBuilder, Catalog catalog, DataDAO dataDAO) {
+    public void init(QueryBuilder queryBuilder, Catalog catalog, DataDAO<Query> dataDAO) {
         this.queryBuilder = queryBuilder;
         this.catalog = catalog;
         this.dataDAO = dataDAO;

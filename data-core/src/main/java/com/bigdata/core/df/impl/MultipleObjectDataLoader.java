@@ -11,7 +11,6 @@ public class MultipleObjectDataLoader extends BaseDataLoader<List<Map<String, Ob
 
     @Override
     public List<Map<String, Object>> fetch(Query query) {
-        JdbcDAO jdbcDAO = (JdbcDAO) this.dataDAO;
-        return jdbcDAO.lookup(query);
+        return  this.dataDAO.lookup(query);
     }
 }

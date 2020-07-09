@@ -11,8 +11,7 @@ public class SingleObjectDataLoader extends BaseDataLoader<Map<String, Object>> 
 
     @Override
     public Map<String, Object> fetch(Query query) {
-        JdbcDAO jdbcDAO = (JdbcDAO) this.dataDAO;
-        Map<String, Object> data = jdbcDAO.lookupRecord(query);
+        Map<String, Object> data = this.dataDAO.lookupRecord(query);
         return data;
     }
 }

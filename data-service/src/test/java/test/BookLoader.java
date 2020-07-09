@@ -11,8 +11,7 @@ public class BookLoader extends BaseDataLoader<Book> {
 
     @Override
     public Book fetch(Query query) {
-        JdbcDAO jdbcDAO = (JdbcDAO) this.dataDAO;
-        Map<String, Object> data = jdbcDAO.lookupRecord(query);
+        Map<String, Object> data =  this.dataDAO.lookupRecord(query);
 
         return new Book(asString(data, "isn"),
                 asString(data, "title"),

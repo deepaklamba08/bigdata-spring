@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 
-public interface DataDAO {
+public interface DataDAO<T extends Query> {
 
-    public Map<String,Object> lookupRecord(Query query);
+    public Map<String,Object> lookupRecord(T query);
 
-    public List<Map<String,Object>> lookup(Query query);
+    public List<Map<String,Object>> lookup(T query);
 
 }
