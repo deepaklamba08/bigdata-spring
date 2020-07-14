@@ -5,7 +5,8 @@ schema{
 type Query{
   lookupEntity(id: String): Entity
   lookupEntityByType(type: String): [Entity]
-  lookupEntityIdType(id:String,type: String): Entity
+  lookupEntityIdType(id:String,type: String): Entity,
+  lookupEntityByTypeV2(type: String,pageSize: Int): [Entity]
 }
 
 type Entity{

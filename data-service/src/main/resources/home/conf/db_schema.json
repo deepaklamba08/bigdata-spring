@@ -4,12 +4,14 @@
   "queryAliases": {
     "lookupEntity": "entity",
     "lookupEntityByType": "entity",
-    "lookupEntityIdType": "entity"
+    "lookupEntityIdType": "entity",
+    "lookupEntityByTypeV2": "entity"
   },
   "dataloaders": {
     "lookupEntity": "SingleObject",
     "lookupEntityByType": "MultipleObject",
-    "lookupEntityIdType": "SingleObject"
+    "lookupEntityIdType": "SingleObject",
+    "lookupEntityByTypeV2": "MultipleObject"
   },
   "tables": [
     {
