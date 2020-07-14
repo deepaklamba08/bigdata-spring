@@ -53,14 +53,11 @@ public class BeanProvider {
         DataDAOFactory dataDAOFactory = new DataDAOFactory(this.serviceProperties.getDbCred());
         DataFetcherFactory fetcherFactory = new DataFetcherFactory(queryBuilder, dataDAOFactory.createDAO(), catalog, fetcherTypes);
 
-        File configFile = new File(this.serviceProperties.getDataLoaderConfigFilePath());
-        Map<String, String> config = SchemaUtil.readAsMap(configFile);
-
         RuntimeWiring.Builder wiring = RuntimeWiring.newRuntimeWiring();
         TypeRuntimeWiring.Builder builder = new TypeRuntimeWiring.Builder();
         builder.typeName("Query");
 
-        config.forEach((key, value) ->
+        catalog.getDataloaders().forEach((key, value) ->
                 builder.dataFetcher(key, fetcherFactory.createDataFetcher(DataFetcherFactory.FetcherType.valueOf(value)))
         );
         return wiring.type(builder.build()).build();

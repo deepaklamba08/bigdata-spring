@@ -6,6 +6,11 @@
     "lookupEntityByType": "entity",
     "lookupEntityIdType": "entity"
   },
+  "dataloaders": {
+    "lookupEntity": "SingleObject",
+    "lookupEntityByType": "MultipleObject",
+    "lookupEntityIdType": "SingleObject"
+  },
   "tables": [
     {
       "tableName": "ENTITY",

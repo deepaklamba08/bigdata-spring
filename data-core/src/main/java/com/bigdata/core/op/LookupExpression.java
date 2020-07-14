@@ -13,9 +13,14 @@ public class LookupExpression {
     private final Map<TableSchema, Set<String>> projections;
     private final Map<TableSchema, Operator> filters;
 
-    private LookupExpression(Map<TableSchema, Set<String>> projections, Map<TableSchema, Operator> filters) {
+    private final int pageSize;
+    private final int pageNumber;
+
+    private LookupExpression(Map<TableSchema, Set<String>> projections, Map<TableSchema, Operator> filters, int pageSize, int pageNumber) {
         this.projections = projections;
         this.filters = filters;
+        this.pageSize = pageSize;
+        this.pageNumber = pageNumber;
     }
 
     public Map<TableSchema, Operator> getFilters() {
@@ -26,9 +31,21 @@ public class LookupExpression {
         return projections;
     }
 
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    public int getPageSize() {
+        return pageSize;
+    }
+
     public static class LookupExpressionBuilder {
         private Map<TableSchema, Set<String>> projections;
         private Map<TableSchema, Operator> filters;
+
+        private int pageSize;
+        private int pageNumber;
+
 
         public LookupExpressionBuilder() {
             this.projections = new HashMap<>(2);
@@ -56,6 +73,16 @@ public class LookupExpression {
             return this;
         }
 
+        public LookupExpressionBuilder withPageSize(int pageSize) {
+            this.pageSize = pageSize;
+            return this;
+        }
+
+        public LookupExpressionBuilder withPageNumber(int pageNumber) {
+            this.pageNumber = pageNumber;
+            return this;
+        }
+
         public LookupExpressionBuilder merge(LookupExpressionBuilder expressionBuilder) {
             expressionBuilder.projections.entrySet().forEach(entry -> {
                 BiFunction<TableSchema, Set<String>, Set<String>> biFunction = (tableSchema, column) -> {
@@ -75,7 +102,7 @@ public class LookupExpression {
         }
 
         public LookupExpression build() {
-            return new LookupExpression(this.projections, this.filters);
+            return new LookupExpression(this.projections, this.filters, this.pageSize, this.pageNumber);
         }
 
     }

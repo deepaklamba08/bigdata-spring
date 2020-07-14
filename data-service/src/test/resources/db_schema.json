@@ -3,11 +3,20 @@
   "joinExpressions": {
     "author~book": "AUTHOR author INNER JOIN BOOK book ON book.AUTHOR_ID=author.ID"
   },
+  "dataloaders": {
+    "allBooks": "MultipleObject",
+    "book": "SingleObject",
+    "bookBy": "SingleObject",
+    "bookById": "MultipleObject",
+    "lookupEntityByType": "MultipleObject",
+    "bookByIdV2": "MultipleObject"
+  },
   "queryAliases": {
     "book": "book",
     "bookBy": "book",
     "author": "author",
-    "bookById": "book"
+    "bookById": "book",
+    "bookByIdV2": "book"
   },
   "tables": [
     {

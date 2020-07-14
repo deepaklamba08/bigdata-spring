@@ -13,9 +13,6 @@ public class ServiceProperties {
     @Value("${bigdata.svc.db.mapping.file}")
     private String databaseMappingFilePath;
 
-    @Value("${bigdata.svc.data.loader.file}")
-    private String dataLoaderConfigFilePath;
-
     @Value("${bigdata.svc.data.single.object}")
     private String singleObjectProvider;
 
@@ -23,10 +20,6 @@ public class ServiceProperties {
     private String multipleObjectProvider;
 
     private Map<String, String> dbCred;
-
-    public String getDataLoaderConfigFilePath() {
-        return dataLoaderConfigFilePath;
-    }
 
     public String getGraphqlSchemaFilePath() {
         return graphqlSchemaFilePath;

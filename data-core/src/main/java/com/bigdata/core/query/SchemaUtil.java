@@ -17,6 +17,7 @@ public class SchemaUtil {
     private static final String JOIN_EXPRESSIONS = "joinExpressions";
     private static final String QUERY_ALIASES = "queryAliases";
     private static final String TABLES = "tables";
+    private static final String DATA_LOADERS = "dataloaders";
 
     private static ObjectMapper mapper = new ObjectMapper();
 
@@ -28,6 +29,7 @@ public class SchemaUtil {
         JsonNode schemaNode = mapper.readTree(schemaFile);
         Map<String, String> joinExpressions = readAsMap(schemaNode.get(JOIN_EXPRESSIONS));
         Map<String, String> queryAliases = readAsMap(schemaNode.get(QUERY_ALIASES));
+        Map<String, String> dataLoaders = readAsMap(schemaNode.get(DATA_LOADERS));
 
         Catalog.CatalogBuilder catalogBuilder = new Catalog.CatalogBuilder();
         if (joinExpressions != null) {
@@ -38,6 +40,11 @@ public class SchemaUtil {
         if (queryAliases != null) {
             for (Map.Entry<String, String> entry : queryAliases.entrySet()) {
                 catalogBuilder.withQueryAliases(entry.getKey(), entry.getValue());
+            }
+        }
+        if (dataLoaders != null) {
+            for (Map.Entry<String, String> entry : dataLoaders.entrySet()) {
+                catalogBuilder.withDataLoader(entry.getKey(), entry.getValue());
             }
         }
 

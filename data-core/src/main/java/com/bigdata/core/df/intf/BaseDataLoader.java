@@ -12,9 +12,13 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class BaseDataLoader<T> implements DataFetcher<T> {
+    private static final String PAGE_SIZE = "pageSize";
+    private static final String PAGE_NUMBER = "pageNumber";
+
     private QueryBuilder queryBuilder;
     private Catalog catalog;
     protected DataDAO<Query> dataDAO;
@@ -23,7 +27,7 @@ public abstract class BaseDataLoader<T> implements DataFetcher<T> {
     public T get(DataFetchingEnvironment environment) {
         LookupExpression.LookupExpressionBuilder projectionExpression = this.scanProjections(environment.getFields());
         LookupExpression.LookupExpressionBuilder filterExpressionBuilder = this.scanExpressions(environment.getFields());
-        LookupExpression expression = projectionExpression.merge(filterExpressionBuilder).build();
+        LookupExpression expression = this.setPagination(projectionExpression.merge(filterExpressionBuilder), environment.getArguments()).build();
 
         Query query = queryBuilder.buildQuery(expression);
         return this.fetch(query);
@@ -50,7 +54,7 @@ public abstract class BaseDataLoader<T> implements DataFetcher<T> {
         List<Selection> selections = field.getSelectionSet().getSelections();
 
         LookupExpression.LookupExpressionBuilder expressionBuilder = selections.stream().map(s -> parseFilters(s, tableSchema)).reduce((e1, e2) -> e1.merge(e2)).get();
-        field.getArguments().forEach(arg -> expressionBuilder.withfilter(tableSchema, createOperator(arg, tableSchema)));
+        field.getArguments().stream().filter(arg -> !(arg.getName().equals(PAGE_SIZE) || arg.getName().equals(PAGE_NUMBER))).forEach(arg -> expressionBuilder.withfilter(tableSchema, createOperator(arg, tableSchema)));
         return expressionBuilder;
     }
 
@@ -127,6 +131,12 @@ public abstract class BaseDataLoader<T> implements DataFetcher<T> {
         } else {
             throw new IllegalStateException("");
         }
+    }
+
+    private LookupExpression.LookupExpressionBuilder setPagination(LookupExpression.LookupExpressionBuilder expressionBuilder, Map<String, Object> arguments) {
+        Integer pageSize = (Integer) arguments.getOrDefault(PAGE_SIZE, 0);
+        Integer pageNumber = (Integer) arguments.getOrDefault(PAGE_NUMBER, 0);
+        return expressionBuilder.withPageSize(pageSize).withPageNumber(pageNumber);
     }
 
     public void init(QueryBuilder queryBuilder, Catalog catalog, DataDAO<Query> dataDAO) {

@@ -6,6 +6,8 @@ import com.bigdata.core.op.Operator;
 import com.bigdata.core.op.OperatorParser;
 import com.bigdata.core.op.SqlOperatorParser;
 import com.bigdata.core.query.Catalog;
+import com.bigdata.core.query.dialect.Dialect;
+import com.bigdata.core.query.dialect.DialectFactory;
 import com.bigdata.dao.intf.DataQuery;
 import com.bigdata.core.query.QueryBuilder;
 import com.bigdata.core.query.TableSchema;
@@ -20,26 +22,42 @@ public class SqlQueryBuilder implements QueryBuilder {
 
     private Catalog catalog;
     private SqlOperatorParser operatorParser;
+    private Dialect dialect;
 
     public SqlQueryBuilder(Catalog catalog) {
         this.catalog = catalog;
         this.operatorParser = new SqlOperatorParser();
+        this.dialect = DialectFactory.getDialect(catalog.getDialect());
     }
 
     @Override
     public DataQuery buildQuery(LookupExpression expression) {
 
-        Optional<String> projections = expression.getProjections().entrySet().stream().map(pair ->
-                this.getQuotedString(pair.getValue(), pair.getKey(), catalog.getDialect())
-        ).reduce((v1, v2) -> v1 + ", " + v2);
-        StringBuilder query = new StringBuilder("SELECT ");
         Set<TableSchema> selectionSet = expression.getProjections().keySet();
-        query.append(projections.get()).append(" FROM ").append(this.buildSelectionSet(selectionSet));
+        StringBuilder query = new StringBuilder("SELECT ");
+        query.append(this.getProjectionString(expression)).append(" FROM ").append(this.buildSelectionSet(selectionSet));
 
         Operator.And operator = new Operator.And(expression.getFilters().values());
         OperatorParser.SqlExpression sqlExpression = operatorParser.parse(operator);
         query.append(" WHERE ").append(sqlExpression.getExpression());
-        List<Object> parameters = sqlExpression.getParameters().stream().flatMap(parameter -> {
+
+        String sqlText = this.addPagination(query.toString(), expression);
+        return new DataQuery(sqlText, this.getParameters(sqlExpression));
+    }
+
+    private String addPagination(String query, LookupExpression expression) {
+        String paginationExpression = this.dialect.getPaginationString(expression.getPageSize(), expression.getPageNumber());
+        if (paginationExpression != null) {
+            StringBuilder sqlText = new StringBuilder(query).append(" ").append(paginationExpression);
+            return sqlText.toString();
+        } else {
+            return query;
+        }
+    }
+
+    @NotNull
+    private List<Object> getParameters(OperatorParser.SqlExpression sqlExpression) {
+        return sqlExpression.getParameters().stream().flatMap(parameter -> {
             if (parameter instanceof Operator.ArrayValue) {
                 Operator.ArrayValue arrayValue = (Operator.ArrayValue) parameter;
                 return arrayValue.getValue().stream().map(p -> p.getValue());
@@ -48,18 +66,17 @@ public class SqlQueryBuilder implements QueryBuilder {
             }
 
         }).collect(Collectors.toList());
-
-        return new DataQuery(query.toString(), parameters);
     }
 
     @NotNull
-    private String getQuotedString(Collection<String> columns, TableSchema table, String dialect) {
-        Function<String, String> mapper;
-        if ("HIVE".equalsIgnoreCase(dialect)) {
-            mapper = columnName -> table.getAlias() + "." + columnName + " as " + table.getColumnAlias(columnName);
-        } else {
-            mapper = columnName -> table.getAlias() + "." + columnName + " as \"" + table.getColumnAlias(columnName) + "\"";
-        }
+    private String getProjectionString(LookupExpression expression) {
+        return expression.getProjections().entrySet().stream().map(pair -> this.getQuotedString(pair.getValue(), pair.getKey())
+        ).reduce((v1, v2) -> v1 + ", " + v2).get();
+    }
+
+    @NotNull
+    private String getQuotedString(Collection<String> columns, TableSchema table) {
+        Function<String, String> mapper = columnName -> table.getAlias() + "." + columnName + " as " + this.dialect.getQuotedString(table.getColumnAlias(columnName));
         return columns.stream().map(mapper).reduce((v1, v2) -> v1 + ", " + v2).get();
     }
 

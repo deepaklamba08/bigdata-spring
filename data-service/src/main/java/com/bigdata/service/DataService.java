@@ -38,7 +38,7 @@ public class DataService {
             ObjectNode resultNode = SchemaUtil.getMapper().createObjectNode();
             resultNode.put("errorMessage", "search operation failed due to invalid request");
             logger.error(this.getMessage(errors));
-            return new RequestResult<>(500, "failed", resultNode);
+            return new RequestResult<>(400, "failed", resultNode);
         }
     }
 
