@@ -5,9 +5,7 @@ import com.bigdata.core.query.Catalog;
 import com.bigdata.core.query.QueryBuilder;
 import com.bigdata.core.query.SchemaUtil;
 import com.bigdata.core.query.impl.SqlQueryBuilder;
-import com.bigdata.dao.intf.DataDAO;
 import com.bigdata.dao.intf.impl.DataDAOFactory;
-import com.bigdata.dao.intf.impl.JdbcDAO;
 import com.bigdata.util.ServiceProperties;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
@@ -16,13 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
-import java.util.Map;
 
 @Configuration
 public class BeanProvider {
