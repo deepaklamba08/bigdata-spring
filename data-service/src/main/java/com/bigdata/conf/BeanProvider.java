@@ -30,8 +30,7 @@ public class BeanProvider {
     @Autowired
     private ServiceProperties serviceProperties;
 
-
-    @Bean(name = "deviceDAO")
+    @Bean
     @Scope("singleton")
     public GraphQL graphQL() throws IOException {
         File schemaFile = new File(serviceProperties.getGraphqlSchemaFilePath());
